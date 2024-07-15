@@ -27,11 +27,10 @@ const LoginScreen = () => {
         e.preventDefault();
         try {
             const res = await login({ email, password}).unwrap();
-            dispatch(setCredentials(...res));
+            dispatch(setCredentials({...res}));
             navigate('/');
-        }
-        catch (err) {
-            console.error(err?.err.data.message || err.error);
+        } catch (err) {
+            console.log(err?.data?.message || err.error);
         }
     };
 
