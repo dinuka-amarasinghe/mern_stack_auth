@@ -1,8 +1,8 @@
 import { useState} from 'react';
-import { Link, useNavigate } from 'react-router-dom';
 import { Form, Button } from 'react-bootstrap';
 import FormContainer from '../components/FormContainer';
 import { useEffect } from 'react';
+import { useUpdateUserMutation } from '../slices/userApiSlice.js';
 import { setCredentials } from '../slices/authSlice.js';
 import { useDispatch, useSelector } from 'react-redux';
 import { toast } from 'react-toastify';
@@ -14,15 +14,16 @@ const ProfileScreen = () => {
     const [password, setPassword] = useState('');
     const [confirmPassword, setConfirmPassword] = useState('');
  
-    const navigate = useNavigate();
     const dispatch = useDispatch();
 
     const { userInfo } = useSelector((state) => state.auth);
 
+    const [updateProfile, { isLoading }] = useUpdateUserMutation();
+
     useEffect(() => {
         setName(userInfo.name);
         setEmail(userInfo.email);
-    },[userInfo.setName, userInfo.setEmail]);
+    }, [userInfo.setName, userInfo.setEmail]);
 
     const submitHandler = async (e) => {
         e.preventDefault();
@@ -30,11 +31,21 @@ const ProfileScreen = () => {
         if (password !== confirmPassword) {
             toast.error('Passwords do not match');
         }else {
-            console.log('Submit');
+            try {
+                const res = await updateProfile({
+                    _id: userInfo.id,
+                    name,
+                    email,
+                    password
+                }).unwrap();
+                dispatch(setCredentials({...res}));
+                toast.success('Profile updated!');
+            } catch (err) {
+                toast.error(err?.data?.message || err.error);
+            }
         }
     }
     
-
     return (
         <FormContainer>
             <h1>Update Profile</h1>
@@ -78,6 +89,8 @@ const ProfileScreen = () => {
                     onChange={(e) => setConfirmPassword(e.target.value)}>
                 </Form.Control>
             </Form.Group>
+
+            {isLoading && <Loader />}
 
             <Button type='submit' variant='primary' className='mt-3'>
                     Update
